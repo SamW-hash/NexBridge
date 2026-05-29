@@ -5,6 +5,8 @@
 #include <string>
 #include <termios.h>
 #include <unistd.h>
+#include <sstream>
+#include <cstdint>
 
 int main() {
     const char* portName = "/dev/ttyUSB0";
@@ -80,8 +82,18 @@ int main() {
         }
     }
 
-    std::cout << "Raw response: " << response << '\n';
-    close(serialPort);
+    // Convert response to degrees
+    response.pop_back();
+    size_t commaPos = response.find(',');
+    std::string azHex = response.substr(0, commaPos);
+    std::string altHex = response.substr(commaPos + 1);
+    uint32_t azRaw = std::stoul(azHex, nullptr, 16);
+    uint32_t altRaw = std::stoul(altHex, nullptr, 16);
+    double azDeg = static_cast<double>(azRaw) / 4294967296.0 * 360;
+    double altDeg = static_cast<double>(altRaw) / 4294967296.0 * 360;
+
+    std::cout << "Azimuth: " << azDeg << " degrees\n";
+    std::cout << "Altitude: " << altDeg << " degrees\n";
 
     return 0;
 }
