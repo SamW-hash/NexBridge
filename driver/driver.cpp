@@ -51,5 +51,45 @@ int main() {
         close(serialPort);
         return 1;
     }
+
+    std::string command = "z"; /*
+                                  Z = AZM-ALT
+                                  z = precise AZM-ALT
+                                  E = RA/DEC
+                                  e = precise RA/DEC
+                                                      */
+    int bytesWritten = write(serialPort, command.c_str(), command.size());
+    if (bytesWritten < 0) {
+        std::cerr << "Failed to write command: "
+                  << std::strerror(errno) << '\n';
+        close(serialPort);
+        return 1;
+    }
+
+    std::string response;
+    char ch;
+
+    while (true) {
+        int bytesRead = read(serialPort, &ch, 1);
+        if (bytesRead < 0) {
+            std::cerr << "Failed to read: "
+                      << std::strerror(errno) << '\n';
+            close(serialPort);
+            return 1;
+        }
+        if (bytesRead == 0) {
+            std::cerr << "Timed out waiting for response.\n";
+            close(serialPort);
+            return 1;
+        }
+        response += ch;
+        if (ch == '#') {
+            break;
+        }
+    }
+
+    std::cout << "Raw response: " << response << '\n';
+    close(serialPort);
+    
     return 0;
 }
